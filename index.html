@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>학생 개별 모의면접 선착순 예약</title>
+  <title>모의면접 예약 시스템</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Google Fonts: Inter & Noto Sans KR -->
@@ -66,7 +66,7 @@
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
 
-  <!-- 상단 고정 헤더 -->
+  <!-- 상단 고정 네비게이션 헤더 -->
   <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
     <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
       <!-- 좌측 타이틀 및 실시간 연결 표시 -->
@@ -76,13 +76,13 @@
         </div>
         <div class="min-w-0">
           <div class="flex items-center gap-2 flex-wrap">
-            <h1 class="text-base sm:text-lg font-bold text-slate-900 leading-tight truncate">학생 개별 모의면접 예약</h1>
+            <h1 class="text-base sm:text-lg font-bold text-slate-900 leading-tight truncate">모의면접 예약 시스템</h1>
             <span id="liveStatusBadge" class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
               <span id="liveStatusDot" class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
               <span id="liveStatusText">연결 중...</span>
             </span>
           </div>
-          <p class="text-xs text-slate-500 hidden sm:block">11월 23일(월) ~ 11월 26일(목) · 1인당 2시간(2개 교시) 필수 선택</p>
+          <p class="text-xs text-slate-500 hidden sm:block">11월 23일(월) ~ 11월 26일(목) · 1인당 2시간(하루 1시간씩, 총 2일) 필수 선택</p>
         </div>
       </div>
 
@@ -90,11 +90,11 @@
       <div id="headerUserArea" class="hidden items-center gap-2 sm:gap-2.5 shrink-0">
         <div id="headerUserBadge" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold bg-indigo-50 text-indigo-900 border border-indigo-200">
           <i data-lucide="user" class="w-3.5 h-3.5 text-indigo-600 shrink-0"></i>
-          <span id="headerUserText" class="truncate max-w-[140px] sm:max-w-none"></span>
+          <span id="headerUserText" class="truncate max-w-[130px] sm:max-w-none"></span>
         </div>
         <button id="logoutBtn" type="button" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs sm:text-sm font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors cursor-pointer">
           <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
-          <span>로그아웃 (계정 전환)</span>
+          <span>로그아웃</span>
         </button>
       </div>
     </div>
@@ -121,9 +121,9 @@
         </div>
 
         <form id="loginForm" class="p-6 sm:p-7 space-y-5" novalidate>
-          <!-- 실시간 잔여 공강 시간 요약 -->
+          <!-- 실시간 잔여 면접 시간 요약 -->
           <div class="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm">
-            <span class="text-slate-600 font-medium">현재 신청 가능한 공강 시간</span>
+            <span class="text-slate-600 font-medium">현재 예약 가능한 모의면접 시간</span>
             <span id="loginRemainingSlotsText" class="font-bold text-indigo-600">확인 중...</span>
           </div>
 
@@ -161,7 +161,8 @@
           </button>
 
           <div class="bg-slate-50 rounded-xl p-3.5 text-xs text-slate-500 space-y-1 leading-relaxed border border-slate-100">
-            <p>• 모든 학생은 <strong class="text-slate-700">총 2시간(2개 교시)</strong>을 필수로 선택해야 저장됩니다.</p>
+            <p>• 모든 학생은 <strong class="text-slate-700">총 2시간(2개 교시)</strong>을 필수로 선택해야 합니다.</p>
+            <p>• <strong class="text-indigo-700">하루에는 최대 1시간(1개 교시)</strong>만 선택할 수 있습니다.</p>
             <p>• 한 번 로그인하면 다음 접속 시 자동으로 로그인됩니다.</p>
           </div>
         </form>
@@ -170,37 +171,39 @@
 
     <!-- 2. 학생 모의면접 시간 선택 및 예약 화면 -->
     <section id="bookingView" class="hidden space-y-5 animate-fade-in">
-      <!-- 이미 2개 시간 예약을 완료한 학생에게 표시되는 확정 카드 -->
+      <!-- 확정된 예약 내역 배너 (1개 또는 2개 확정 시 표시, 각 시간별 개별 취소 + 전체 취소 지원) -->
       <div id="confirmedCard" class="hidden bg-emerald-50 border-2 border-emerald-400 rounded-2xl p-5 sm:p-6 shadow-xs">
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div class="flex items-start gap-3.5">
             <div class="w-11 h-11 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
               <i data-lucide="check-circle-2" class="w-6 h-6"></i>
             </div>
-            <div class="space-y-1.5">
+            <div class="space-y-2">
               <div class="flex flex-wrap items-center gap-2">
-                <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-200/80 text-emerald-950">모의면접 예약 확정 완료 (2시간)</span>
+                <span id="confirmedBadgeText" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-200/80 text-emerald-950">모의면접 예약 확정 완료 (2/2)</span>
                 <span id="confirmedStudentInfo" class="text-xs font-semibold text-emerald-800"></span>
               </div>
-              <h2 class="text-base sm:text-lg font-bold text-emerald-950">
-                확정된 모의면접 일시: <span id="confirmedSlotsLabel" class="underline decoration-emerald-500 decoration-2 underline-offset-4"></span>
-              </h2>
-              <p id="confirmedBookedAtLabel" class="text-xs text-emerald-700"></p>
+              <div id="confirmedSlotsContainer" class="flex flex-wrap items-center gap-2">
+                <!-- 확정된 각 슬롯별 배지 및 [개별 취소] 버튼 동적 렌더링 -->
+              </div>
+              <p id="confirmedSubHint" class="text-xs text-emerald-700"></p>
             </div>
           </div>
 
-          <button id="cancelBookingBtn" type="button" class="px-4 py-2.5 rounded-xl bg-white hover:bg-rose-50 text-rose-600 border border-rose-200 font-semibold text-sm shadow-xs transition-colors shrink-0 cursor-pointer">
-            예약 취소 후 다시 선택
-          </button>
+          <div class="flex items-center gap-2 shrink-0">
+            <button id="cancelAllMyBookingBtn" type="button" class="px-4 py-2.5 rounded-xl bg-white hover:bg-rose-50 text-rose-600 border border-rose-200 font-semibold text-sm shadow-xs transition-colors cursor-pointer">
+              전체 취소
+            </button>
+          </div>
         </div>
       </div>
 
-      <!-- 상단 상태 범례 및 안내 -->
+      <!-- 상단 안내 및 상태 범례 -->
       <div class="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3">
         <div>
-          <h2 class="text-base sm:text-lg font-bold text-slate-900">모의면접 가능 공강 시간표</h2>
-          <p class="text-xs sm:text-sm text-slate-500 mt-0.5">
-            원하는 <strong class="text-indigo-600">2개 교시</strong>를 선택한 뒤 <strong class="text-indigo-600">선택한 2개 시간 예약 확정</strong> 버튼을 눌러주세요.
+          <h2 class="text-base sm:text-lg font-bold text-slate-900">모의면접 가능 시간표</h2>
+          <p id="scheduleInstructionText" class="text-xs sm:text-sm text-slate-500 mt-0.5">
+            서로 다른 날짜에서 <strong class="text-indigo-600">하루 1시간씩 총 2개 교시</strong>를 선택한 뒤 예약 확정 버튼을 눌러주세요.
           </p>
         </div>
         <div class="flex flex-wrap items-center gap-3 text-xs font-medium text-slate-600">
@@ -211,10 +214,13 @@
             <span class="w-3 h-3 rounded bg-indigo-600"></span>선택됨
           </span>
           <span class="inline-flex items-center gap-1.5">
-            <span class="w-3 h-3 rounded bg-emerald-500"></span>내 확정 시간
+            <span class="w-3 h-3 rounded bg-amber-50 border-2 border-dashed border-amber-400"></span>다른 학생 선택 중
           </span>
           <span class="inline-flex items-center gap-1.5">
-            <span class="w-3 h-3 rounded bg-slate-200 border border-slate-300"></span>예약 마감
+            <span class="w-3 h-3 rounded bg-emerald-500"></span>내 예약 확정
+          </span>
+          <span class="inline-flex items-center gap-1.5">
+            <span class="w-3 h-3 rounded bg-slate-200 border border-slate-300"></span>예약 마감 / 제한
           </span>
         </div>
       </div>
@@ -226,18 +232,18 @@
             0/2 선택됨
           </span>
           <div id="topSelectedBadges" class="flex flex-wrap items-center gap-1.5 text-xs sm:text-sm text-slate-500 font-medium">
-            2개 시간을 선택해 주세요 (필수)
+            서로 다른 날짜에서 2개 시간을 선택해 주세요 (하루 1시간 제한)
           </div>
         </div>
 
         <button id="topSaveBtn" type="button" disabled
-          class="w-full lg:w-auto min-w-[235px] inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-bold text-sm sm:text-base shadow-sm transition-all cursor-pointer">
+          class="w-full lg:w-auto min-w-[245px] inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-bold text-sm sm:text-base shadow-sm transition-all cursor-pointer">
           <span id="topSaveSpinner" class="hidden w-4 h-4 border-2 border-white/40 border-t-white rounded-full spinner"></span>
           <span id="topSaveBtnText">선택한 2개 시간 예약 확정</span>
         </button>
       </div>
 
-      <!-- 4일 공강 시간표 그리드 (11월 23일 월 ~ 11월 26일 목, 총 14개 슬롯) -->
+      <!-- 4일 시간표 그리드 (11월 23일 월 ~ 11월 26일 목, 총 14개 슬롯, 오전/오후 점선 구분) -->
       <div id="scheduleGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
         <!-- JavaScript로 4일 카드 동적 렌더링 -->
       </div>
@@ -249,12 +255,12 @@
             0/2 선택됨
           </span>
           <div id="bottomSelectedBadges" class="flex flex-wrap items-center gap-1.5 text-xs sm:text-sm text-slate-500 font-medium">
-            2개 시간을 선택해 주세요 (필수)
+            서로 다른 날짜에서 2개 시간을 선택해 주세요 (하루 1시간 제한)
           </div>
         </div>
 
         <button id="bottomSaveBtn" type="button" disabled
-          class="w-full lg:w-auto min-w-[235px] inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-bold text-sm sm:text-base shadow-sm transition-all cursor-pointer">
+          class="w-full lg:w-auto min-w-[245px] inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-bold text-sm sm:text-base shadow-sm transition-all cursor-pointer">
           <span id="bottomSaveSpinner" class="hidden w-4 h-4 border-2 border-white/40 border-t-white rounded-full spinner"></span>
           <span id="bottomSaveBtnText">선택한 2개 시간 예약 확정</span>
         </button>
@@ -272,18 +278,16 @@
           </div>
           <p class="text-sm text-slate-500 mt-1">학생별 모의면접 예약 내역과 시간표 현황이 실시간으로 반영됩니다.</p>
         </div>
-          <p class="text-sm text-slate-500 mt-1">학생별 예약 내역과 시간표 현황이 실시간으로 반영됩니다.</p>
-        </div>
 
         <div class="flex flex-wrap items-center gap-2.5">
           <button id="exportCsvBtn" type="button" class="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold shadow-xs transition-colors cursor-pointer">
             <i data-lucide="download" class="w-4 h-4"></i>
-            <span>엑셀(CSV) 다운로드</span>
+            <span>CSV 다운로드</span>
           </button>
 
           <button id="resetAllBtn" type="button" class="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 text-sm font-semibold transition-colors cursor-pointer">
             <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
-            <span>전체 데이터 초기화</span>
+            <span>전체 예약 초기화</span>
           </button>
         </div>
       </div>
@@ -291,39 +295,38 @@
       <!-- 전체 예약 현황 요약 카드 4개 -->
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs">
-          <p class="text-xs font-semibold text-slate-500">전체 공강 슬롯</p>
+          <p class="text-xs font-semibold text-slate-500">전체 면접 슬롯</p>
           <p id="statTotalSlots" class="text-2xl font-bold text-slate-900 mt-1">14시간</p>
         </div>
         <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs">
-          <p class="text-xs font-semibold text-slate-500">예약 완료 슬롯</p>
+          <p class="text-xs font-semibold text-slate-500">예약 확정</p>
           <p id="statBookedSlots" class="text-2xl font-bold text-indigo-600 mt-1">0시간</p>
         </div>
         <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs">
-          <p class="text-xs font-semibold text-slate-500">잔여 공강 슬롯</p>
+          <p class="text-xs font-semibold text-slate-500">잔여 시간</p>
           <p id="statRemainingSlots" class="text-2xl font-bold text-emerald-600 mt-1">14시간</p>
         </div>
         <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs">
-          <p class="text-xs font-semibold text-slate-500">신청 완료 인원</p>
+          <p class="text-xs font-semibold text-slate-500">신청 완료 학생 수</p>
           <p id="statCompletedStudents" class="text-2xl font-bold text-slate-900 mt-1">0 / 5명</p>
         </div>
       </div>
 
-      <!-- 표 1: 학생별 신청 현황 및 연락처 테이블 -->
+      <!-- 표 1: 학생별 신청 현황 및 연락처 테이블 (총 5명) -->
       <div class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
         <div class="px-5 py-4 border-b border-slate-200">
           <h3 class="text-base font-bold text-slate-900">1. 학생별 모의면접 신청 현황 및 연락처 (총 5명)</h3>
         </div>
         <div class="overflow-x-auto">
-          <table class="w-full text-left border-collapse min-w-[820px]">
+          <table class="w-full text-left border-collapse min-w-[860px]">
             <thead>
               <tr class="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-600">
                 <th class="py-3 px-4">학번</th>
                 <th class="py-3 px-4">이름</th>
                 <th class="py-3 px-4">핸드폰 번호 / 연락</th>
                 <th class="py-3 px-4">신청 상태</th>
-                <th class="py-3 px-4">예약된 1교시 일시</th>
-                <th class="py-3 px-4">예약된 2교시 일시</th>
-                <th class="py-3 px-4 text-right">관리</th>
+                <th class="py-3 px-4">확정된 모의면접 시간 (개별 취소 가능)</th>
+                <th class="py-3 px-4 text-right">학생 전체 관리</th>
               </tr>
             </thead>
             <tbody id="adminStudentsTableBody" class="divide-y divide-slate-100 text-sm">
@@ -339,11 +342,11 @@
           <h3 class="text-base font-bold text-slate-900">2. 날짜·교시별 전체 모의면접 시간표 현황 (총 14개 슬롯)</h3>
         </div>
         <div class="overflow-x-auto">
-          <table class="w-full text-left border-collapse min-w-[840px]">
+          <table class="w-full text-left border-collapse min-w-[860px]">
             <thead>
               <tr class="bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-600">
                 <th class="py-3 px-4">날짜 (요일)</th>
-                <th class="py-3 px-4">교시</th>
+                <th class="py-3 px-4">교시 (구분)</th>
                 <th class="py-3 px-4">상태</th>
                 <th class="py-3 px-4">예약자 학번</th>
                 <th class="py-3 px-4">예약자 이름</th>
@@ -415,6 +418,8 @@
       collection,
       doc,
       getDocs,
+      setDoc,
+      deleteDoc,
       onSnapshot,
       runTransaction,
       writeBatch,
@@ -437,8 +442,12 @@
     const db = getFirestore(app);
 
     const BOOKINGS_COLLECTION = "counseling_bookings";
-    const STUDENT_LOCKS_COLLECTION = "counseling_student_locks";
-    const AUTH_STORAGE_KEY = "mock_interview_auth_user_v1";
+    const SELECTIONS_COLLECTION = "counseling_selections";
+
+    const AUTH_STORAGE_KEY = "mock_interview_auth_v1";
+    const FALLBACK_BOOKINGS_KEY = "mock_interview_fallback_bookings_v1";
+    const LIVE_SELECTIONS_STORAGE_KEY = "mock_interview_live_selections_v1";
+    const SELECTION_STALE_MS = 10 * 60 * 1000;
 
     // =========================================================================
     // 2. 허용 계정 화이트리스트 (학생 5명 + 관리자 1명)
@@ -493,6 +502,7 @@
     SCHEDULE_DAYS.forEach((day) => {
       day.periods.forEach((period) => {
         const slotId = `${day.dateKey}_P${period}`;
+        const isMorning = period <= 4;
         const meta = {
           slotId,
           dateKey: day.dateKey,
@@ -500,6 +510,7 @@
           shortLabel: day.shortLabel,
           period,
           periodLabel: `${period}교시`,
+          timePartLabel: isMorning ? "오전" : "오후",
           fullLabel: `${day.dateLabel} ${period}교시`,
           compactLabel: `${day.shortLabel} ${period}교시`
         };
@@ -508,16 +519,18 @@
       });
     });
 
-    const REQUIRED_SELECTION_COUNT = 2;
+    const REQUIRED_TOTAL_SLOTS = 2;
 
     // =========================================================================
     // 4. 전역 상태 변수
     // =========================================================================
-    let bookingsMap = {}; // { [slotId]: { slotId, studentId, studentName, phone, bookedAt } }
+    let bookingsMap = {}; // { [slotId]: { slotId, dateLabel, periodLabel, studentId, studentName, phone, timestamp } }
+    let liveSelectionsMap = {}; // { [studentId]: { studentId, studentName, slots: string[], updatedAt: number } }
     let currentUser = null; // { studentId, name, phone, role }
-    let selectedSlotIds = []; // 저장 전 학생이 선택한 슬롯 ID 배열 (최대 2개)
+    let selectedSlotIds = []; // 확정 전 새로 선택한 슬롯 ID 배열
     let isSubmitting = false;
     let initialLoadDone = false;
+    let isOfflineFallback = false;
     let pendingConfirmAction = null;
 
     // =========================================================================
@@ -545,10 +558,13 @@
     const loginErrorText = document.getElementById("loginErrorText");
 
     const confirmedCard = document.getElementById("confirmedCard");
+    const confirmedBadgeText = document.getElementById("confirmedBadgeText");
     const confirmedStudentInfo = document.getElementById("confirmedStudentInfo");
-    const confirmedSlotsLabel = document.getElementById("confirmedSlotsLabel");
-    const confirmedBookedAtLabel = document.getElementById("confirmedBookedAtLabel");
-    const cancelBookingBtn = document.getElementById("cancelBookingBtn");
+    const confirmedSlotsContainer = document.getElementById("confirmedSlotsContainer");
+    const confirmedSubHint = document.getElementById("confirmedSubHint");
+    const cancelAllMyBookingBtn = document.getElementById("cancelAllMyBookingBtn");
+
+    const scheduleInstructionText = document.getElementById("scheduleInstructionText");
 
     const topActionBar = document.getElementById("topActionBar");
     const topCountBadge = document.getElementById("topCountBadge");
@@ -614,11 +630,15 @@
 
     function loadSavedUser() {
       try {
-        const raw = localStorage.getItem(AUTH_STORAGE_KEY);
+        const raw = localStorage.getItem(AUTH_STORAGE_KEY) || localStorage.getItem("mock_interview_user_v1");
         if (!raw) return null;
         const parsed = JSON.parse(raw);
         if (!parsed || !parsed.studentId || !parsed.name) return null;
-        return authenticateAccount(parsed.studentId, parsed.name);
+        const verified = authenticateAccount(parsed.studentId, parsed.name);
+        if (verified) {
+          persistUser(verified);
+        }
+        return verified;
       } catch (e) {
         return null;
       }
@@ -636,6 +656,25 @@
         }
       } catch (e) {
         console.error("로그인 상태 저장 오류:", e);
+      }
+    }
+
+    function readFallbackBookings() {
+      try {
+        const raw = localStorage.getItem(FALLBACK_BOOKINGS_KEY);
+        if (!raw) return {};
+        const parsed = JSON.parse(raw);
+        return parsed && typeof parsed === "object" ? parsed : {};
+      } catch (e) {
+        return {};
+      }
+    }
+
+    function writeFallbackBookings(map) {
+      try {
+        localStorage.setItem(FALLBACK_BOOKINGS_KEY, JSON.stringify(map));
+      } catch (e) {
+        console.error("로컬 백업 저장 오류:", e);
       }
     }
 
@@ -660,26 +699,6 @@
       return ALL_SLOTS.filter(
         (slot) => bookingsMap[slot.slotId] && bookingsMap[slot.slotId].studentId === studentId
       );
-    }
-
-    function renderPhoneWithActions(phone) {
-      if (!phone) return "-";
-      const digitsOnly = String(phone).replace(/[^0-9+]/g, "");
-      return `
-        <div class="inline-flex items-center gap-1.5 flex-wrap">
-          <span class="font-semibold text-slate-800 mr-0.5">${phone}</span>
-          <a href="tel:${digitsOnly}" title="${phone} 전화 걸기"
-            class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 active:scale-95 text-emerald-700 border border-emerald-200 text-xs font-bold transition-all">
-            <i data-lucide="phone" class="w-3 h-3"></i>
-            <span>전화</span>
-          </a>
-          <a href="sms:${digitsOnly}" title="${phone} 문자 보내기"
-            class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-sky-50 hover:bg-sky-100 active:scale-95 text-sky-700 border border-sky-200 text-xs font-bold transition-all">
-            <i data-lucide="message-square" class="w-3 h-3"></i>
-            <span>문자</span>
-          </a>
-        </div>
-      `;
     }
 
     function sortSlotIds(slotIds) {
@@ -725,7 +744,114 @@
     }
 
     // =========================================================================
-    // 7. Firestore 실시간 데이터 동기화 (onSnapshot)
+    // 6-1. 실시간 임시 선택 상태 동기화 (counseling_selections)
+    // =========================================================================
+    function readLocalSelectionsMirror() {
+      try {
+        const raw = localStorage.getItem(LIVE_SELECTIONS_STORAGE_KEY);
+        if (!raw) return {};
+        const parsed = JSON.parse(raw);
+        return parsed && typeof parsed === "object" ? parsed : {};
+      } catch (e) {
+        return {};
+      }
+    }
+
+    function writeLocalSelectionMirror(studentId, payloadOrNull) {
+      try {
+        const current = readLocalSelectionsMirror();
+        if (payloadOrNull) {
+          current[studentId] = payloadOrNull;
+        } else {
+          delete current[studentId];
+        }
+        localStorage.setItem(LIVE_SELECTIONS_STORAGE_KEY, JSON.stringify(current));
+      } catch (e) {
+        console.error("로컬 선택 미러 저장 오류:", e);
+      }
+    }
+
+    async function syncLiveSelection(student, slots) {
+      if (!student || student.role !== "student") return;
+      const cleanSlots = Array.isArray(slots) ? [...slots] : [];
+
+      if (cleanSlots.length === 0) {
+        delete liveSelectionsMap[student.studentId];
+        writeLocalSelectionMirror(student.studentId, null);
+        if (!isOfflineFallback) {
+          deleteDoc(doc(db, SELECTIONS_COLLECTION, student.studentId)).catch(() => {});
+        }
+        return;
+      }
+
+      const payload = {
+        studentId: student.studentId,
+        studentName: student.name,
+        slots: cleanSlots,
+        updatedAt: Date.now()
+      };
+      liveSelectionsMap[student.studentId] = payload;
+      writeLocalSelectionMirror(student.studentId, payload);
+
+      if (!isOfflineFallback) {
+        setDoc(doc(db, SELECTIONS_COLLECTION, student.studentId), payload).catch(() => {});
+      }
+    }
+
+    async function clearLiveSelection(studentId) {
+      if (!studentId) return;
+      delete liveSelectionsMap[studentId];
+      writeLocalSelectionMirror(studentId, null);
+      if (!isOfflineFallback) {
+        deleteDoc(doc(db, SELECTIONS_COLLECTION, studentId)).catch(() => {});
+      }
+    }
+
+    function getOtherStudentsSelectingSlot(slotId) {
+      if (!currentUser) return [];
+      // 이미 예약 확정된 슬롯에는 선택 중 표시를 띄우지 않음
+      if (bookingsMap[slotId]) return [];
+
+      const now = Date.now();
+      const activeSelectors = [];
+
+      Object.values(liveSelectionsMap).forEach((entry) => {
+        if (!entry || !entry.studentId) return;
+        if (entry.studentId === currentUser.studentId) return;
+        if (!entry.updatedAt || now - Number(entry.updatedAt) > SELECTION_STALE_MS) return;
+        // 이미 2시간 모두 예약 확정한 학생의 잔여 선택 데이터는 무시
+        if (getStudentBookedSlots(entry.studentId).length >= REQUIRED_TOTAL_SLOTS) return;
+
+        if (Array.isArray(entry.slots) && entry.slots.includes(slotId)) {
+          activeSelectors.push(entry);
+        }
+      });
+
+      return activeSelectors;
+    }
+
+    function renderPhoneWithActions(phone) {
+      if (!phone) return "-";
+      const digitsOnly = String(phone).replace(/[^0-9+]/g, "");
+      return `
+        <div class="inline-flex items-center gap-1.5 flex-wrap">
+          <span class="font-semibold text-slate-800 mr-0.5">${phone}</span>
+          <a href="tel:${digitsOnly}" title="${phone} 전화 걸기"
+            class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 active:scale-95 text-emerald-700 border border-emerald-200 text-xs font-bold transition-all">
+            <i data-lucide="phone" class="w-3 h-3"></i>
+            <span>전화</span>
+          </a>
+          <a href="sms:${digitsOnly}" title="${phone} 문자 보내기"
+            class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-sky-50 hover:bg-sky-100 active:scale-95 text-sky-700 border border-sky-200 text-xs font-bold transition-all">
+            <i data-lucide="message-square" class="w-3 h-3"></i>
+            <span>문자</span>
+          </a>
+        </div>
+      `;
+    }
+
+    // =========================================================================
+    // 7. Firestore 실시간 데이터 동기화 (onSnapshot + localStorage 백업)
     // =========================================================================
     function setLiveBadgeConnected(isConnected) {
       if (isConnected) {
@@ -733,223 +859,432 @@
         liveStatusDot.className = "w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse";
         liveStatusText.textContent = "실시간 동기화 중";
       } else {
-        liveStatusBadge.className = "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-rose-50 text-rose-700 border border-rose-200";
-        liveStatusDot.className = "w-1.5 h-1.5 rounded-full bg-rose-500";
-        liveStatusText.textContent = "연결 확인 필요";
+        liveStatusBadge.className = "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-800 border border-amber-200";
+        liveStatusDot.className = "w-1.5 h-1.5 rounded-full bg-amber-500";
+        liveStatusText.textContent = "로컬 백업 모드";
       }
     }
 
     function parseBookingDoc(docSnap) {
       const d = docSnap.data() || {};
-      let bookedAtIso = "";
-      if (d.bookedAt && typeof d.bookedAt.toDate === "function") {
-        bookedAtIso = d.bookedAt.toDate().toISOString();
+      const meta = SLOT_META_MAP[docSnap.id];
+      let timestampIso = "";
+      if (d.timestamp && typeof d.timestamp.toDate === "function") {
+        timestampIso = d.timestamp.toDate().toISOString();
+      } else if (d.timestampClient) {
+        timestampIso = String(d.timestampClient);
+      } else if (d.timestamp) {
+        timestampIso = String(d.timestamp);
+      } else if (d.bookedAt && typeof d.bookedAt.toDate === "function") {
+        timestampIso = d.bookedAt.toDate().toISOString();
       } else if (d.bookedAtClient) {
-        bookedAtIso = String(d.bookedAtClient);
-      } else if (d.bookedAt) {
-        bookedAtIso = String(d.bookedAt);
+        timestampIso = String(d.bookedAtClient);
       }
+
       return {
         slotId: docSnap.id,
+        dateLabel: String(d.dateLabel || meta?.dateLabel || ""),
+        periodLabel: String(d.periodLabel || meta?.periodLabel || ""),
         studentId: String(d.studentId || ""),
         studentName: String(d.studentName || ""),
         phone: String(d.phone || ""),
-        bookedAt: bookedAtIso
+        timestamp: timestampIso
       };
     }
 
     async function fetchLatestBookings() {
-      const snap = await getDocs(collection(db, BOOKINGS_COLLECTION));
-      const map = {};
-      snap.forEach((docSnap) => {
-        map[docSnap.id] = parseBookingDoc(docSnap);
-      });
-      return map;
+      if (isOfflineFallback) {
+        return readFallbackBookings();
+      }
+      try {
+        const snap = await getDocs(collection(db, BOOKINGS_COLLECTION));
+        const map = {};
+        snap.forEach((docSnap) => {
+          map[docSnap.id] = parseBookingDoc(docSnap);
+        });
+        writeFallbackBookings(map);
+        return map;
+      } catch (err) {
+        console.error("최신 예약 데이터 조회 오류:", err);
+        return readFallbackBookings();
+      }
+    }
+
+    function handleIncomingBookingsUpdate(nextMap) {
+      bookingsMap = nextMap;
+      writeFallbackBookings(nextMap);
+
+      if (currentUser && currentUser.role === "student") {
+        const myConfirmed = getStudentBookedSlots(currentUser.studentId);
+        const myConfirmedDateKeys = new Set(myConfirmed.map((s) => s.dateKey));
+        const neededCount = Math.max(0, REQUIRED_TOTAL_SLOTS - myConfirmed.length);
+
+        if (neededCount === 0) {
+          if (selectedSlotIds.length > 0) {
+            selectedSlotIds = [];
+            clearLiveSelection(currentUser.studentId);
+          }
+        } else {
+          // 1) 본인이 임시 선택해 둔 시간 중 방금 다른 학생이 먼저 확정한 시간 제거
+          const takenByOthers = selectedSlotIds.filter(
+            (sid) => bookingsMap[sid] && bookingsMap[sid].studentId !== currentUser.studentId
+          );
+          let changed = false;
+          if (takenByOthers.length > 0) {
+            selectedSlotIds = selectedSlotIds.filter((sid) => !takenByOthers.includes(sid));
+            changed = true;
+            const labels = takenByOthers.map((sid) => SLOT_META_MAP[sid]?.fullLabel || sid).join(", ");
+            showToast(`방금 다른 학생이 [${labels}] 시간을 예약하여 선택에서 제외되었습니다.`, "warning");
+          }
+
+          // 2) 이미 확정된 요일과 겹치거나 같은 요일에 중복 선택된 임시 슬롯 자동 정리 (하루 1시간 제한)
+          const seenDates = new Set(myConfirmedDateKeys);
+          const validUniqueDaySlots = [];
+          for (const sid of selectedSlotIds) {
+            const dKey = SLOT_META_MAP[sid]?.dateKey;
+            if (dKey && !seenDates.has(dKey)) {
+              seenDates.add(dKey);
+              validUniqueDaySlots.push(sid);
+            } else {
+              changed = true;
+            }
+          }
+          selectedSlotIds = validUniqueDaySlots;
+
+          // 3) 남은 필요 개수를 초과한 선택분 정리
+          if (selectedSlotIds.length > neededCount) {
+            selectedSlotIds = selectedSlotIds.slice(0, neededCount);
+            changed = true;
+          }
+
+          if (changed) {
+            syncLiveSelection(currentUser, selectedSlotIds);
+          }
+        }
+      }
+
+      if (!initialLoadDone) {
+        initialLoadDone = true;
+        loadingView.classList.add("hidden");
+      }
+
+      renderCurrentView();
     }
 
     function startRealtimeSubscription() {
       const bookingsColRef = collection(db, BOOKINGS_COLLECTION);
+      const selectionsColRef = collection(db, SELECTIONS_COLLECTION);
 
       onSnapshot(
         bookingsColRef,
         (snapshot) => {
+          isOfflineFallback = false;
           setLiveBadgeConnected(true);
           const nextMap = {};
           snapshot.forEach((docSnap) => {
             nextMap[docSnap.id] = parseBookingDoc(docSnap);
           });
-          bookingsMap = nextMap;
-
-          // 학생 로그인 상태일 때, 본인이 임시 선택해 둔 시간 중 방금 다른 학생이 선점한 시간이 있으면 즉시 해제
-          if (currentUser && currentUser.role === "student") {
-            const confirmed = getStudentBookedSlots(currentUser.studentId);
-            if (confirmed.length > 0) {
-              selectedSlotIds = [];
-            } else {
-              const takenByOthers = selectedSlotIds.filter(
-                (sid) => bookingsMap[sid] && bookingsMap[sid].studentId !== currentUser.studentId
-              );
-              if (takenByOthers.length > 0) {
-                selectedSlotIds = selectedSlotIds.filter((sid) => !takenByOthers.includes(sid));
-                const labels = takenByOthers.map((sid) => SLOT_META_MAP[sid]?.fullLabel || sid).join(", ");
-                showToast(`방금 다른 학생이 [${labels}] 시간을 예약하여 선택에서 제외되었습니다.`, "warning");
-              }
-            }
-          }
-
-          if (!initialLoadDone) {
-            initialLoadDone = true;
-            loadingView.classList.add("hidden");
-          }
-
-          renderCurrentView();
+          handleIncomingBookingsUpdate(nextMap);
         },
         (error) => {
-          console.error("Firestore 실시간 구독 오류:", error);
+          console.error("Firestore 실시간 구독 오류 (로컬 백업 전환):", error);
+          isOfflineFallback = true;
           setLiveBadgeConnected(false);
-          if (!initialLoadDone) {
-            initialLoadDone = true;
-            loadingView.classList.add("hidden");
-            renderCurrentView();
-          }
-          showToast("실시간 서버 연결에 일시적인 오류가 발생했습니다.", "error");
+          handleIncomingBookingsUpdate(readFallbackBookings());
         }
       );
+
+      onSnapshot(
+        selectionsColRef,
+        (snapshot) => {
+          const nextSelections = {};
+          const now = Date.now();
+          snapshot.forEach((docSnap) => {
+            const d = docSnap.data() || {};
+            const updatedAt = Number(d.updatedAt || 0);
+            if (updatedAt && now - updatedAt <= SELECTION_STALE_MS) {
+              nextSelections[docSnap.id] = {
+                studentId: String(d.studentId || docSnap.id),
+                studentName: String(d.studentName || ""),
+                slots: Array.isArray(d.slots) ? d.slots : [],
+                updatedAt
+              };
+            }
+          });
+          liveSelectionsMap = nextSelections;
+          if (initialLoadDone && currentUser && currentUser.role === "student") {
+            renderStudentBookingView();
+            refreshIcons();
+          }
+        },
+        () => {
+          // 실시간 선택 컬렉션 권한이 제한된 경우에도 메인 예약 기능은 정상 유지
+        }
+      );
+
+      // 동일 브라우저 다중 탭 동기화
+      window.addEventListener("storage", (e) => {
+        if (e.key === LIVE_SELECTIONS_STORAGE_KEY) {
+          liveSelectionsMap = readLocalSelectionsMirror();
+          if (initialLoadDone && currentUser && currentUser.role === "student") {
+            renderStudentBookingView();
+            refreshIcons();
+          }
+        } else if (e.key === FALLBACK_BOOKINGS_KEY && isOfflineFallback) {
+          handleIncomingBookingsUpdate(readFallbackBookings());
+        }
+      });
     }
 
     // =========================================================================
-    // 8. 화면 전환 및 렌더링
+    // 8. 전체 뷰 전환 렌더링
     // =========================================================================
     function renderCurrentView() {
-      if (currentUser) {
-        headerUserArea.classList.remove("hidden");
-        headerUserArea.classList.add("flex");
-
-        if (currentUser.role === "admin") {
-          headerUserBadge.className = "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold bg-amber-50 text-amber-900 border border-amber-200";
-          headerUserText.textContent = `${currentUser.studentId} ${currentUser.name}`;
-          loginView.classList.add("hidden");
-          bookingView.classList.add("hidden");
-          adminView.classList.remove("hidden");
-          renderAdminView();
-        } else {
-          headerUserBadge.className = "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold bg-indigo-50 text-indigo-900 border border-indigo-200";
-          headerUserText.textContent = `${currentUser.studentId} ${currentUser.name}`;
-          loginView.classList.add("hidden");
-          adminView.classList.add("hidden");
-          bookingView.classList.remove("hidden");
-          renderStudentBookingView();
-        }
-      } else {
+      if (!currentUser) {
         headerUserArea.classList.add("hidden");
         headerUserArea.classList.remove("flex");
         bookingView.classList.add("hidden");
         adminView.classList.add("hidden");
         loginView.classList.remove("hidden");
 
-        const bookedCount = Object.keys(bookingsMap).length;
-        const remaining = Math.max(0, ALL_SLOTS.length - bookedCount);
+        const remaining = Math.max(0, ALL_SLOTS.length - Object.keys(bookingsMap).length);
         loginRemainingSlotsText.textContent = `${remaining}시간 / 총 ${ALL_SLOTS.length}시간`;
+        refreshIcons();
+        return;
+      }
+
+      headerUserArea.classList.remove("hidden");
+      headerUserArea.classList.add("flex");
+
+      if (currentUser.role === "admin") {
+        headerUserBadge.className = "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold bg-amber-50 text-amber-900 border border-amber-200";
+        headerUserText.textContent = `${currentUser.name} (${currentUser.studentId})`;
+
+        loginView.classList.add("hidden");
+        bookingView.classList.add("hidden");
+        adminView.classList.remove("hidden");
+        renderAdminView();
+      } else {
+        headerUserBadge.className = "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs sm:text-sm font-bold bg-indigo-50 text-indigo-900 border border-indigo-200";
+        headerUserText.textContent = `${currentUser.studentId} ${currentUser.name}`;
+
+        loginView.classList.add("hidden");
+        adminView.classList.add("hidden");
+        bookingView.classList.remove("hidden");
+        renderStudentBookingView();
       }
 
       refreshIcons();
     }
 
     // =========================================================================
-    // 9. 학생 화면 렌더링 & 상/하단 동일 예약 확정 바 제어
+    // 9. 학생 모의면접 예약 화면 렌더링 및 개별 취소/추가 선택 로직
     // =========================================================================
     function renderStudentBookingView() {
       const myConfirmedSlots = getStudentBookedSlots(currentUser.studentId);
-      const isAlreadyBooked = myConfirmedSlots.length > 0;
+      const confirmedCount = myConfirmedSlots.length;
+      const neededCount = Math.max(0, REQUIRED_TOTAL_SLOTS - confirmedCount);
+      const isFullyBooked = neededCount === 0;
 
-      if (isAlreadyBooked) {
+      // 1) 상단 확정 내역 배너 (1개 이상 확정 시 표시, 각 시간별 [개별 취소] + [전체 취소] 제공)
+      if (confirmedCount > 0) {
         confirmedCard.classList.remove("hidden");
-        topActionBar.classList.add("hidden");
-        bottomActionBar.classList.add("hidden");
-
         confirmedStudentInfo.textContent = `${currentUser.studentId} ${currentUser.name} (${currentUser.phone})`;
-        confirmedSlotsLabel.textContent = myConfirmedSlots.map((s) => s.fullLabel).join(" / ");
-        const firstBookedAt = bookingsMap[myConfirmedSlots[0].slotId]?.bookedAt;
-        confirmedBookedAtLabel.textContent = `예약 확정 시각: ${formatDateTime(firstBookedAt)}`;
-      } else {
-        confirmedCard.classList.add("hidden");
-        topActionBar.classList.remove("hidden");
-        bottomActionBar.classList.remove("hidden");
-        syncBothActionBars();
-      }
 
-      // 4일 공강 시간표 카드 렌더링
-      scheduleGrid.innerHTML = SCHEDULE_DAYS.map((day) => {
-        const periodButtonsHtml = day.periods
-          .map((period) => {
-            const slotId = `${day.dateKey}_P${period}`;
-            const booking = bookingsMap[slotId];
-            const isMine = booking && booking.studentId === currentUser.studentId;
-            const isTakenByOther = Boolean(booking && !isMine);
-            const isSelected = !isAlreadyBooked && selectedSlotIds.includes(slotId);
+        if (isFullyBooked) {
+          confirmedCard.className = "bg-emerald-50 border-2 border-emerald-400 rounded-2xl p-5 sm:p-6 shadow-xs";
+          confirmedBadgeText.textContent = "모의면접 예약 확정 완료 (2/2)";
+          confirmedBadgeText.className = "px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-200/80 text-emerald-950";
+          confirmedSubHint.textContent = "변경하고 싶은 교시만 [개별 취소] 후 다른 시간을 다시 선택할 수 있습니다.";
+          cancelAllMyBookingBtn.classList.remove("hidden");
+        } else {
+          confirmedCard.className = "bg-amber-50 border-2 border-amber-400 rounded-2xl p-5 sm:p-6 shadow-xs";
+          confirmedBadgeText.textContent = `일부 확정됨 (${confirmedCount}/2) · 1개 시간 추가 선택 필요`;
+          confirmedBadgeText.className = "px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-200 text-amber-950";
+          confirmedSubHint.textContent = "총 2시간을 채워야 예약이 완료됩니다. 아래 시간표에서 1개 시간을 추가로 선택해 확정해 주세요.";
+          cancelAllMyBookingBtn.classList.add("hidden");
+        }
 
-            if (isMine) {
-              return `
-                <div class="w-full p-3.5 rounded-xl bg-emerald-50 border-2 border-emerald-500 text-emerald-950 flex items-center justify-between">
-                  <div>
-                    <div class="font-bold text-base">${period}교시</div>
-                    <div class="text-xs font-semibold text-emerald-700 mt-0.5">내 확정 모의면접 시간</div>
-                  </div>
-                  <span class="px-2.5 py-1 rounded-lg bg-emerald-600 text-white text-xs font-bold">확정됨</span>
-                </div>
-              `;
-            }
-
-            if (isTakenByOther) {
-              return `
-                <button type="button" disabled
-                  class="w-full p-3.5 rounded-xl bg-slate-100 border border-slate-200 text-slate-400 flex items-center justify-between cursor-not-allowed select-none">
-                  <div class="text-left">
-                    <div class="font-bold text-base line-through">${period}교시</div>
-                    <div class="text-xs font-medium text-slate-400 mt-0.5">다른 학생 예약 완료</div>
-                  </div>
-                  <span class="px-2.5 py-1 rounded-lg bg-slate-200 text-slate-500 text-xs font-bold">예약 마감</span>
-                </button>
-              `;
-            }
-
-            if (isAlreadyBooked) {
-              return `
-                <div class="w-full p-3.5 rounded-xl bg-white border border-slate-200 text-slate-400 flex items-center justify-between">
-                  <div>
-                    <div class="font-bold text-base">${period}교시</div>
-                    <div class="text-xs mt-0.5">공석</div>
-                  </div>
-                  <span class="text-xs font-medium text-slate-400">선택 완료</span>
-                </div>
-              `;
-            }
-
-            if (isSelected) {
-              return `
-                <button type="button" data-slot-id="${slotId}"
-                  class="slot-choice-btn w-full p-3.5 rounded-xl bg-indigo-600 border-2 border-indigo-600 text-white flex items-center justify-between shadow-xs transition-all cursor-pointer">
-                  <div class="text-left">
-                    <div class="font-bold text-base">${period}교시</div>
-                    <div class="text-xs text-indigo-100 mt-0.5">클릭하여 선택 해제</div>
-                  </div>
-                  <span class="px-2.5 py-1 rounded-lg bg-white text-indigo-700 text-xs font-bold">선택됨 ✓</span>
-                </button>
-              `;
-            }
-
+        confirmedSlotsContainer.innerHTML = myConfirmedSlots
+          .map((slot) => {
+            const b = bookingsMap[slot.slotId];
             return `
-              <button type="button" data-slot-id="${slotId}"
-                class="slot-choice-btn w-full p-3.5 rounded-xl bg-white hover:bg-indigo-50/70 border-2 border-slate-200 hover:border-indigo-400 text-slate-800 flex items-center justify-between transition-all cursor-pointer">
-                <div class="text-left">
-                  <div class="font-bold text-base">${period}교시</div>
-                  <div class="text-xs text-slate-500 mt-0.5">선택 가능</div>
-                </div>
-                <span class="px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700 text-xs font-bold">선택</span>
-              </button>
+              <div class="inline-flex items-center gap-2 bg-white border border-emerald-300 rounded-xl px-3.5 py-2 shadow-2xs">
+                <span class="font-bold text-sm text-emerald-950">${slot.fullLabel}</span>
+                <span class="text-[11px] text-slate-400 hidden sm:inline">(${formatDateTime(b?.timestamp)})</span>
+                <button type="button" data-cancel-my-slot="${slot.slotId}"
+                  class="student-cancel-single-btn ml-1 px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 text-xs font-bold transition-colors cursor-pointer">
+                  개별 취소
+                </button>
+              </div>
             `;
           })
           .join("");
+      } else {
+        confirmedCard.classList.add("hidden");
+      }
+
+      // 2) 안내 문구 및 상단/하단 액션 바 표시 제어
+      if (isFullyBooked) {
+        topActionBar.classList.add("hidden");
+        bottomActionBar.classList.add("hidden");
+        scheduleInstructionText.innerHTML =
+          `2개 모의면접 시간이 모두 확정되었습니다. 특정 시간만 바꾸려면 상단 배너 또는 카드의 <strong class="text-rose-600">개별 취소</strong> 버튼을 눌러주세요.`;
+      } else {
+        topActionBar.classList.remove("hidden");
+        bottomActionBar.classList.remove("hidden");
+        if (confirmedCount === 1) {
+          scheduleInstructionText.innerHTML =
+            `현재 <strong class="text-emerald-600">${myConfirmedSlots[0].fullLabel}</strong>이 확정되어 있습니다. <strong class="text-indigo-600">다른 날짜에서 1개 교시</strong>를 추가로 선택해 확정해 주세요.`;
+        } else {
+          scheduleInstructionText.innerHTML =
+            `서로 다른 날짜에서 <strong class="text-indigo-600">하루 1시간씩 총 2개 교시</strong>를 선택한 뒤 예약 확정 버튼을 눌러주세요.`;
+        }
+        syncBothActionBars(neededCount, confirmedCount);
+      }
+
+      const confirmedDateKeys = new Set(myConfirmedSlots.map((s) => s.dateKey));
+
+      // 3) 각 요일별 슬롯 카드 렌더링 함수 (오전 1~4교시 / 오후 5~7교시 점선 구분 + 하루 1시간 제한)
+      const renderPeriodSlot = (day, period) => {
+        const slotId = `${day.dateKey}_P${period}`;
+        const booking = bookingsMap[slotId];
+        const isMine = booking && booking.studentId === currentUser.studentId;
+        const isTakenByOther = Boolean(booking && !isMine);
+        const isDayAlreadyConfirmedByMe = !isMine && confirmedDateKeys.has(day.dateKey);
+        const isSelected = !isFullyBooked && selectedSlotIds.includes(slotId);
+        const otherSelectors =
+          !isFullyBooked && !booking && !isDayAlreadyConfirmedByMe
+            ? getOtherStudentsSelectingSlot(slotId)
+            : [];
+        const isSelectedByOther = otherSelectors.length > 0;
+
+        if (isMine) {
+          return `
+            <div class="w-full p-3.5 rounded-xl bg-emerald-50 border-2 border-emerald-500 text-emerald-950 flex items-center justify-between gap-2">
+              <div>
+                <div class="font-bold text-base">${period}교시</div>
+                <div class="text-xs font-semibold text-emerald-700 mt-0.5">내 예약 확정</div>
+              </div>
+              <div class="flex items-center gap-1.5 shrink-0">
+                <span class="px-2 py-1 rounded-lg bg-emerald-600 text-white text-xs font-bold">확정됨</span>
+                <button type="button" data-cancel-my-slot="${slotId}"
+                  class="student-cancel-single-btn px-2.5 py-1 rounded-lg bg-white hover:bg-rose-50 text-rose-600 border border-rose-200 text-xs font-bold transition-colors cursor-pointer">
+                  개별 취소
+                </button>
+              </div>
+            </div>
+          `;
+        }
+
+        if (isTakenByOther) {
+          return `
+            <button type="button" disabled
+              class="w-full p-3.5 rounded-xl bg-slate-100 border border-slate-200 text-slate-400 flex items-center justify-between cursor-not-allowed select-none">
+              <div class="text-left">
+                <div class="font-bold text-base line-through">${period}교시</div>
+                <div class="text-xs font-medium text-slate-400 mt-0.5">다른 학생 예약 완료</div>
+              </div>
+              <span class="px-2.5 py-1 rounded-lg bg-slate-200 text-slate-500 text-xs font-bold">예약 마감</span>
+            </button>
+          `;
+        }
+
+        if (isDayAlreadyConfirmedByMe) {
+          return `
+            <button type="button" data-slot-id="${slotId}"
+              class="slot-choice-btn w-full p-3.5 rounded-xl bg-slate-100/90 border border-slate-200 text-slate-400 flex items-center justify-between cursor-not-allowed select-none">
+              <div class="text-left">
+                <div class="font-bold text-base">${period}교시</div>
+                <div class="text-xs font-medium text-slate-400 mt-0.5">해당 요일 예약 완료</div>
+              </div>
+              <span class="px-2.5 py-1 rounded-lg bg-slate-200/80 text-slate-500 text-xs font-bold">하루 1시간 제한</span>
+            </button>
+          `;
+        }
+
+        if (isFullyBooked) {
+          return `
+            <div class="w-full p-3.5 rounded-xl bg-white border border-slate-200 text-slate-400 flex items-center justify-between">
+              <div>
+                <div class="font-bold text-base">${period}교시</div>
+                <div class="text-xs mt-0.5">공석</div>
+              </div>
+              <span class="text-xs font-medium text-slate-400">선택 완료</span>
+            </div>
+          `;
+        }
+
+        if (isSelected) {
+          return `
+            <button type="button" data-slot-id="${slotId}"
+              class="slot-choice-btn w-full p-3.5 rounded-xl bg-indigo-600 border-2 border-indigo-600 text-white flex items-center justify-between shadow-xs transition-all cursor-pointer">
+              <div class="text-left">
+                <div class="font-bold text-base">${period}교시</div>
+                <div class="text-xs text-indigo-100 mt-0.5">
+                  ${isSelectedByOther ? "클릭해 해제 (다른 학생도 함께 선택 중)" : "클릭하여 선택 해제"}
+                </div>
+              </div>
+              <div class="flex flex-col items-end gap-1 shrink-0">
+                <span class="px-2.5 py-1 rounded-lg bg-white text-indigo-700 text-xs font-bold">선택됨 ✓</span>
+                ${
+                  isSelectedByOther
+                    ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-400 text-amber-950 text-[10px] font-bold animate-pulse">다른 학생 선택 중</span>`
+                    : ""
+                }
+              </div>
+            </button>
+          `;
+        }
+
+        if (isSelectedByOther) {
+          return `
+            <button type="button" data-slot-id="${slotId}"
+              class="slot-choice-btn w-full p-3.5 rounded-xl bg-amber-50/75 hover:bg-amber-100/80 border-2 border-dashed border-amber-400 text-slate-900 flex items-center justify-between transition-all cursor-pointer">
+              <div class="text-left">
+                <div class="font-bold text-base text-amber-950">${period}교시</div>
+                <div class="text-xs font-semibold text-amber-700 mt-0.5">아직 확정 전 · 먼저 저장 시 확정</div>
+              </div>
+              <div class="flex flex-col items-end gap-1 shrink-0">
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500 text-white text-xs font-bold shadow-2xs animate-pulse">
+                  <span class="w-1.5 h-1.5 rounded-full bg-white"></span>
+                  다른 학생 선택 중
+                </span>
+              </div>
+            </button>
+          `;
+        }
+
+        return `
+          <button type="button" data-slot-id="${slotId}"
+            class="slot-choice-btn w-full p-3.5 rounded-xl bg-white hover:bg-indigo-50/70 border-2 border-slate-200 hover:border-indigo-400 text-slate-800 flex items-center justify-between transition-all cursor-pointer">
+            <div class="text-left">
+              <div class="font-bold text-base">${period}교시</div>
+              <div class="text-xs text-slate-500 mt-0.5">선택 가능</div>
+            </div>
+            <span class="px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700 text-xs font-bold">선택</span>
+          </button>
+        `;
+      };
+
+      scheduleGrid.innerHTML = SCHEDULE_DAYS.map((day) => {
+        const morningPeriods = day.periods.filter((p) => p <= 4);
+        const afternoonPeriods = day.periods.filter((p) => p >= 5);
+
+        const morningHtml = morningPeriods.map((p) => renderPeriodSlot(day, p)).join("");
+        const afternoonHtml = afternoonPeriods.map((p) => renderPeriodSlot(day, p)).join("");
+
+        const dividerHtml =
+          morningPeriods.length > 0 && afternoonPeriods.length > 0
+            ? `
+              <div class="relative py-2 my-1 flex items-center justify-center" aria-label="오전 오후 구분선">
+                <div class="w-full border-t-2 border-dashed border-slate-300"></div>
+                <span class="px-2.5 py-0.5 bg-white text-[11px] font-bold text-slate-400 tracking-wider shrink-0">
+                  오전 (1~4교시) / 오후 (5~7교시)
+                </span>
+              </div>
+            `
+            : "";
 
         return `
           <div class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden flex flex-col">
@@ -958,18 +1293,32 @@
               <span class="text-xs font-semibold text-slate-500">공강 ${day.periods.length}개</span>
             </div>
             <div class="p-4 space-y-2.5 flex-1">
-              ${periodButtonsHtml}
+              ${morningHtml}
+              ${dividerHtml}
+              ${afternoonHtml}
             </div>
           </div>
         `;
       }).join("");
 
+      // 슬롯 선택 클릭 이벤트 바인딩
       document.querySelectorAll(".slot-choice-btn").forEach((btn) => {
         btn.addEventListener("click", () => {
           const sid = btn.getAttribute("data-slot-id");
           toggleSlotChoice(sid);
         });
       });
+
+      // 학생 본인 개별 슬롯 취소 버튼 이벤트 바인딩 (상단 배너 + 카드 내부 공통)
+      document.querySelectorAll(".student-cancel-single-btn").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const sid = btn.getAttribute("data-cancel-my-slot");
+          handleStudentCancelSingleSlot(sid);
+        });
+      });
+
+      refreshIcons();
     }
 
     function toggleSlotChoice(slotId) {
@@ -981,47 +1330,108 @@
         return;
       }
 
+      const targetMeta = SLOT_META_MAP[slotId];
+      if (!targetMeta) return;
+
+      const myConfirmedSlots = getStudentBookedSlots(currentUser.studentId);
+      const confirmedCount = myConfirmedSlots.length;
+      const neededCount = Math.max(0, REQUIRED_TOTAL_SLOTS - confirmedCount);
+
+      if (neededCount === 0) {
+        showToast("이미 2시간 예약이 확정되어 있습니다. 변경하려면 개별 취소를 먼저 진행해 주세요.", "warning");
+        return;
+      }
+
+      // 1) 이미 확정된 예약이 있는 요일의 다른 교시를 클릭한 경우 경고 모달 표시
+      const confirmedSameDaySlot = myConfirmedSlots.find((s) => s.dateKey === targetMeta.dateKey);
+      if (confirmedSameDaySlot) {
+        openAlertModal(
+          "하루 1시간 선택 제한",
+          `[${targetMeta.dateLabel}]에는 이미 [${confirmedSameDaySlot.periodLabel}]가 예약 확정되어 있습니다.\n하루에는 최대 1시간만 선택할 수 있으므로, 해당 요일의 시간을 변경하려면 먼저 [${confirmedSameDaySlot.fullLabel}]을 개별 취소해 주세요.`
+        );
+        return;
+      }
+
+      // 2) 이미 임시 선택 중인 슬롯을 다시 클릭하면 선택 해제
       const idx = selectedSlotIds.indexOf(slotId);
       if (idx !== -1) {
         selectedSlotIds.splice(idx, 1);
-      } else {
-        if (selectedSlotIds.length >= REQUIRED_SELECTION_COUNT) {
-          showToast("모든 학생은 2시간(2개 교시)까지만 선택할 수 있습니다. 기존 선택을 해제 후 다시 선택해 주세요.", "warning");
-          return;
-        }
-        selectedSlotIds.push(slotId);
+        selectedSlotIds = sortSlotIds(selectedSlotIds);
+        syncLiveSelection(currentUser, selectedSlotIds);
+        renderStudentBookingView();
+        return;
       }
 
+      // 3) 같은 요일에 이미 임시 선택한 다른 교시가 있으면 자연스럽게 새 교시로 교체
+      const sameDayTentativeIdx = selectedSlotIds.findIndex(
+        (sid) => SLOT_META_MAP[sid]?.dateKey === targetMeta.dateKey
+      );
+      if (sameDayTentativeIdx !== -1) {
+        selectedSlotIds.splice(sameDayTentativeIdx, 1, slotId);
+        selectedSlotIds = sortSlotIds(selectedSlotIds);
+        syncLiveSelection(currentUser, selectedSlotIds);
+        renderStudentBookingView();
+        showToast(
+          `하루에는 1시간만 선택할 수 있어 [${targetMeta.fullLabel}](으)로 변경되었습니다.`,
+          "info"
+        );
+        return;
+      }
+
+      // 4) 다른 요일 슬롯 추가 시 필요 개수 초과 확인
+      if (selectedSlotIds.length >= neededCount) {
+        showToast(
+          neededCount === 1
+            ? "추가로 1개 시간만 더 선택할 수 있습니다. 기존 선택을 해제 후 다시 선택해 주세요."
+            : "총 2시간(서로 다른 날짜 2개 교시)까지만 선택할 수 있습니다. 기존 선택을 해제 후 다시 선택해 주세요.",
+          "warning"
+        );
+        return;
+      }
+
+      selectedSlotIds.push(slotId);
       selectedSlotIds = sortSlotIds(selectedSlotIds);
+      syncLiveSelection(currentUser, selectedSlotIds);
       renderStudentBookingView();
     }
 
-    function syncBothActionBars() {
+    function syncBothActionBars(neededCount, confirmedCount) {
       const count = selectedSlotIds.length;
-      const isReady = count === REQUIRED_SELECTION_COUNT;
+      const isReady = count === neededCount && neededCount > 0;
 
-      const countText = isReady ? "2/2 선택 완료 (저장 가능)" : `${count}/2 선택됨 (2시간 필수)`;
+      const countText = isReady
+        ? `${count}/${neededCount} 선택 완료 (확정 가능)`
+        : `${count}/${neededCount} 선택됨 (${neededCount}개 필수)`;
+
       const countClass = isReady
         ? "inline-flex items-center justify-center px-3 py-1 rounded-xl text-xs sm:text-sm font-bold bg-emerald-100 text-emerald-800 shrink-0 w-fit"
         : "inline-flex items-center justify-center px-3 py-1 rounded-xl text-xs sm:text-sm font-bold bg-indigo-100 text-indigo-800 shrink-0 w-fit";
 
       let badgesHtml = "";
       if (count === 0) {
-        badgesHtml = `<span class="text-slate-500">2개 시간을 선택해 주세요 (필수)</span>`;
+        badgesHtml = `<span class="text-slate-500">${
+          confirmedCount === 1
+            ? "다른 날짜에서 1개 시간을 선택해 주세요 (하루 1시간 제한)"
+            : "서로 다른 날짜에서 2개 시간을 선택해 주세요 (하루 1시간 제한)"
+        }</span>`;
       } else {
         const pills = selectedSlotIds
           .map(
             (sid, index) =>
-              `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-indigo-50 text-indigo-800 border border-indigo-200">${index + 1}선택: ${SLOT_META_MAP[sid]?.compactLabel || sid}</span>`
+              `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-indigo-50 text-indigo-800 border border-indigo-200">${confirmedCount + index + 1}번째 시간: ${SLOT_META_MAP[sid]?.compactLabel || sid}</span>`
           )
           .join("");
         const helperText = isReady
           ? `<span class="text-xs font-bold text-emerald-700 ml-1">예약 확정 버튼을 눌러 저장하세요</span>`
-          : `<span class="text-xs font-semibold text-amber-700 ml-1">1개 시간을 더 선택해 주세요</span>`;
+          : `<span class="text-xs font-semibold text-amber-700 ml-1">다른 날짜에서 ${neededCount - count}개 시간을 더 선택해 주세요</span>`;
         badgesHtml = `${pills}${helperText}`;
       }
 
-      // 상단 액션 바 & 하단 액션 바 동시 업데이트
+      const saveBtnLabel =
+        confirmedCount === 1
+          ? "선택한 1개 시간 추가 예약 확정"
+          : "선택한 2개 시간 예약 확정";
+
       [topCountBadge, bottomCountBadge].forEach((el) => {
         el.textContent = countText;
         el.className = countClass;
@@ -1031,21 +1441,25 @@
         el.innerHTML = badgesHtml;
       });
 
+      [topSaveBtnText, bottomSaveBtnText].forEach((tx) => {
+        if (!isSubmitting) tx.textContent = saveBtnLabel;
+      });
+
       [topSaveBtn, bottomSaveBtn].forEach((btn) => {
         btn.disabled = !isReady || isSubmitting;
       });
     }
 
     // =========================================================================
-    // 10. Firestore runTransaction 기반 원자적 2개 슬롯 예약 저장
+    // 10. Firestore runTransaction 기반 원자적 예약 확정 및 개별/전체 취소
     // =========================================================================
-    async function handleSaveTwoSlots() {
-      if (
-        !currentUser ||
-        currentUser.role !== "student" ||
-        selectedSlotIds.length !== REQUIRED_SELECTION_COUNT ||
-        isSubmitting
-      ) {
+    async function handleSaveSelectedSlots() {
+      if (!currentUser || currentUser.role !== "student" || isSubmitting) return;
+
+      const myConfirmedSlots = getStudentBookedSlots(currentUser.studentId);
+      const neededCount = Math.max(0, REQUIRED_TOTAL_SLOTS - myConfirmedSlots.length);
+
+      if (neededCount === 0 || selectedSlotIds.length !== neededCount) {
         return;
       }
 
@@ -1054,70 +1468,155 @@
       [topSaveSpinner, bottomSaveSpinner].forEach((sp) => sp.classList.remove("hidden"));
       [topSaveBtnText, bottomSaveBtnText].forEach((tx) => (tx.textContent = "실시간 저장 중..."));
 
-      const targetSlots = [...selectedSlotIds];
+      const targetNewSlots = [...selectedSlotIds];
+
+      // 저장 전 하루 1시간(날짜 중복) 사전 검증
+      const combinedDates = [...myConfirmedSlots.map((s) => s.slotId), ...targetNewSlots].map(
+        (sid) => SLOT_META_MAP[sid]?.dateKey
+      );
+      if (new Set(combinedDates).size !== combinedDates.length) {
+        isSubmitting = false;
+        [topSaveSpinner, bottomSaveSpinner].forEach((sp) => sp.classList.add("hidden"));
+        openAlertModal(
+          "하루 1시간 선택 제한",
+          "하루에는 최대 1시간(1개 교시)만 예약할 수 있습니다. 서로 다른 날짜로 2개 시간을 선택해 주세요."
+        );
+        renderCurrentView();
+        return;
+      }
 
       try {
-        await runTransaction(db, async (transaction) => {
-          const studentLockRef = doc(db, STUDENT_LOCKS_COLLECTION, currentUser.studentId);
-          const slotRefs = targetSlots.map((sid) => doc(db, BOOKINGS_COLLECTION, sid));
-
-          // 1단계: 모든 transaction.get()을 먼저 수행
-          const lockSnap = await transaction.get(studentLockRef);
-          const slotSnaps = await Promise.all(slotRefs.map((ref) => transaction.get(ref)));
-
-          // 2단계: 본인의 중복 예약 및 타 학생의 선점 여부 검증
-          if (lockSnap.exists()) {
-            throw new Error("ALREADY_BOOKED");
-          }
-
-          for (const snap of slotSnaps) {
-            if (snap.exists()) {
+        if (isOfflineFallback) {
+          const latest = readFallbackBookings();
+          for (const sid of targetNewSlots) {
+            if (latest[sid] && latest[sid].studentId !== currentUser.studentId) {
               throw new Error("SLOT_TAKEN");
             }
           }
+          const latestMySlots = Object.values(latest).filter(
+            (b) => b && b.studentId === currentUser.studentId
+          );
+          const allProposedIds = [...latestMySlots.map((b) => b.slotId), ...targetNewSlots];
+          if (allProposedIds.length > REQUIRED_TOTAL_SLOTS) {
+            throw new Error("ALREADY_BOOKED");
+          }
+          if (allProposedIds.length !== REQUIRED_TOTAL_SLOTS) {
+            throw new Error("STATE_CHANGED");
+          }
+          const uniqueDateSet = new Set(allProposedIds.map((sid) => SLOT_META_MAP[sid]?.dateKey));
+          if (uniqueDateSet.size !== allProposedIds.length) {
+            throw new Error("SAME_DAY_LIMIT");
+          }
 
-          // 3단계: 모두 비어있으면 학생 잠금 문서와 슬롯 2개를 원자적으로 생성
           const nowIso = new Date().toISOString();
-          transaction.set(studentLockRef, {
-            studentId: currentUser.studentId,
-            studentName: currentUser.name,
-            phone: currentUser.phone,
-            slots: targetSlots,
-            bookedAt: serverTimestamp(),
-            bookedAtClient: nowIso
-          });
-
-          targetSlots.forEach((sid, idx) => {
-            transaction.set(slotRefs[idx], {
+          targetNewSlots.forEach((sid) => {
+            const meta = SLOT_META_MAP[sid];
+            latest[sid] = {
               slotId: sid,
+              dateLabel: meta?.dateLabel || "",
+              periodLabel: meta?.periodLabel || "",
               studentId: currentUser.studentId,
               studentName: currentUser.name,
               phone: currentUser.phone,
-              bookedAt: serverTimestamp(),
-              bookedAtClient: nowIso
+              timestamp: nowIso
+            };
+          });
+          writeFallbackBookings(latest);
+          bookingsMap = latest;
+        } else {
+          await runTransaction(db, async (transaction) => {
+            // 1단계: 전체 14개 슬롯 문서를 트랜잭션 내에서 모두 먼저 읽기(Read) 수행
+            const allSlotRefs = ALL_SLOTS.map((s) => doc(db, BOOKINGS_COLLECTION, s.slotId));
+            const allSlotSnaps = await Promise.all(allSlotRefs.map((ref) => transaction.get(ref)));
+
+            const serverSnapMap = {};
+            allSlotSnaps.forEach((snap) => {
+              serverSnapMap[snap.id] = snap;
+            });
+
+            // 2단계: 선택한 슬롯 중 다른 학생이 먼저 생성(create)한 슬롯이 있는지 검증
+            for (const sid of targetNewSlots) {
+              const snap = serverSnapMap[sid];
+              if (snap && snap.exists()) {
+                throw new Error("SLOT_TAKEN");
+              }
+            }
+
+            // 서버 기준 본인의 기존 확정 슬롯 수와 합산하여 총 2시간 및 하루 1시간(서로 다른 날짜) 동시 검증
+            const serverMyConfirmedIds = allSlotSnaps
+              .filter((snap) => snap.exists() && snap.data()?.studentId === currentUser.studentId)
+              .map((snap) => snap.id);
+
+            const allConfirmedAndNewIds = [...serverMyConfirmedIds, ...targetNewSlots];
+            if (allConfirmedAndNewIds.length > REQUIRED_TOTAL_SLOTS) {
+              throw new Error("ALREADY_BOOKED");
+            }
+            if (allConfirmedAndNewIds.length !== REQUIRED_TOTAL_SLOTS) {
+              throw new Error("STATE_CHANGED");
+            }
+
+            const uniqueDates = new Set(
+              allConfirmedAndNewIds.map((sid) => SLOT_META_MAP[sid]?.dateKey)
+            );
+            if (uniqueDates.size !== allConfirmedAndNewIds.length) {
+              throw new Error("SAME_DAY_LIMIT");
+            }
+
+            // 3단계: 비어 있는 슬롯 문서만 원자적으로 생성(create)
+            const nowIso = new Date().toISOString();
+            targetNewSlots.forEach((sid) => {
+              const meta = SLOT_META_MAP[sid];
+              const slotRef = doc(db, BOOKINGS_COLLECTION, sid);
+              transaction.set(slotRef, {
+                slotId: sid,
+                dateLabel: meta?.dateLabel || "",
+                periodLabel: meta?.periodLabel || "",
+                studentId: currentUser.studentId,
+                studentName: currentUser.name,
+                phone: currentUser.phone,
+                timestamp: serverTimestamp(),
+                timestampClient: nowIso
+              });
             });
           });
-        });
 
-        bookingsMap = await fetchLatestBookings();
+          bookingsMap = await fetchLatestBookings();
+        }
+
+        clearLiveSelection(currentUser.studentId);
         selectedSlotIds = [];
         renderCurrentView();
-        showToast("2개 모의면접 시간 예약이 확정되었습니다!", "success");
+        showToast("모의면접 예약 2시간이 확정되었습니다!", "success");
       } catch (err) {
         const latestMap = await fetchLatestBookings();
         bookingsMap = latestMap;
 
         if (err && err.message === "SLOT_TAKEN") {
           selectedSlotIds = selectedSlotIds.filter((sid) => !bookingsMap[sid]);
+          syncLiveSelection(currentUser, selectedSlotIds);
           renderCurrentView();
           openAlertModal(
             "예약 저장 불가",
-            "⚠️ 이미 다른 학생이 먼저 선택한 시간입니다! 마감된 시간을 제외하고 다시 선택해 주세요."
+            "⚠️ 이미 다른 학생이 먼저 선택한 시간입니다! 다른 시간을 다시 선택해 주세요."
+          );
+        } else if (err && err.message === "SAME_DAY_LIMIT") {
+          selectedSlotIds = [];
+          syncLiveSelection(currentUser, selectedSlotIds);
+          renderCurrentView();
+          openAlertModal(
+            "하루 1시간 선택 제한",
+            "하루에는 최대 1시간(1개 교시)만 예약할 수 있습니다. 서로 다른 날짜로 다시 선택해 주세요."
           );
         } else if (err && err.message === "ALREADY_BOOKED") {
+          clearLiveSelection(currentUser.studentId);
           selectedSlotIds = [];
           renderCurrentView();
           openAlertModal("중복 예약 안내", "이미 2시간 모의면접 예약이 완료되어 있습니다.");
+        } else if (err && err.message === "STATE_CHANGED") {
+          selectedSlotIds = [];
+          clearLiveSelection(currentUser.studentId);
+          renderCurrentView();
+          openAlertModal("예약 상태 변경 안내", "예약 상태가 변경되어 화면을 최신 상태로 갱신했습니다. 다시 확인 후 선택해 주세요.");
         } else {
           console.error("트랜잭션 예약 저장 오류:", err);
           renderCurrentView();
@@ -1126,42 +1625,83 @@
       } finally {
         isSubmitting = false;
         [topSaveSpinner, bottomSaveSpinner].forEach((sp) => sp.classList.add("hidden"));
-        [topSaveBtnText, bottomSaveBtnText].forEach((tx) => (tx.textContent = "선택한 2개 시간 예약 확정"));
-        if (!bookingView.classList.contains("hidden")) {
-          syncBothActionBars();
-        }
+        renderCurrentView();
       }
     }
 
-    topSaveBtn.addEventListener("click", handleSaveTwoSlots);
-    bottomSaveBtn.addEventListener("click", handleSaveTwoSlots);
+    topSaveBtn.addEventListener("click", handleSaveSelectedSlots);
+    bottomSaveBtn.addEventListener("click", handleSaveSelectedSlots);
 
-    // 본인 예약 취소 (writeBatch로 슬롯 2개와 학생 잠금 문서 일괄 삭제)
-    cancelBookingBtn.addEventListener("click", () => {
+    // 학생 본인 단일 슬롯 개별 취소
+    function handleStudentCancelSingleSlot(slotId) {
+      if (!currentUser || currentUser.role !== "student" || !slotId) return;
+      const meta = SLOT_META_MAP[slotId];
+
+      openConfirmModal(
+        "개별 시간 예약 취소",
+        `[${meta ? meta.fullLabel : slotId}] 예약을 개별 취소하시겠습니까?\n취소 후 비어 있는 다른 시간 1개를 다시 선택해 확정하셔야 합니다.`,
+        async () => {
+          try {
+            if (isOfflineFallback) {
+              const latest = readFallbackBookings();
+              if (latest[slotId]?.studentId === currentUser.studentId) {
+                delete latest[slotId];
+              }
+              writeFallbackBookings(latest);
+              bookingsMap = latest;
+            } else {
+              await deleteDoc(doc(db, BOOKINGS_COLLECTION, slotId));
+              bookingsMap = await fetchLatestBookings();
+            }
+
+            selectedSlotIds = [];
+            clearLiveSelection(currentUser.studentId);
+            renderCurrentView();
+            showToast(`[${meta ? meta.fullLabel : slotId}] 예약이 개별 취소되었습니다. 1개 시간을 추가로 선택해 주세요.`, "info");
+          } catch (err) {
+            console.error("학생 개별 취소 오류:", err);
+            showToast("개별 취소 처리 중 오류가 발생했습니다.", "error");
+          }
+        }
+      );
+    }
+
+    // 학생 본인 전체 예약 취소
+    cancelAllMyBookingBtn.addEventListener("click", () => {
       if (!currentUser || currentUser.role !== "student") return;
 
       openConfirmModal(
-        "예약 취소 확인",
-        "확정된 2시간 모의면접 예약을 취소하시겠습니까?\n취소 즉시 해당 시간은 다른 학생이 선택할 수 있게 열립니다.",
+        "전체 예약 취소 확인",
+        "확정된 모의면접 예약을 모두 취소하시겠습니까?\n취소 즉시 해당 시간들은 다른 학생이 선택할 수 있게 열립니다.",
         async () => {
           try {
-            const latest = await fetchLatestBookings();
-            const batch = writeBatch(db);
+            if (isOfflineFallback) {
+              const latest = readFallbackBookings();
+              Object.keys(latest).forEach((sid) => {
+                if (latest[sid]?.studentId === currentUser.studentId) {
+                  delete latest[sid];
+                }
+              });
+              writeFallbackBookings(latest);
+              bookingsMap = latest;
+            } else {
+              const latest = await fetchLatestBookings();
+              const batch = writeBatch(db);
+              Object.values(latest).forEach((b) => {
+                if (b.studentId === currentUser.studentId) {
+                  batch.delete(doc(db, BOOKINGS_COLLECTION, b.slotId));
+                }
+              });
+              await batch.commit();
+              bookingsMap = await fetchLatestBookings();
+            }
 
-            Object.values(latest).forEach((b) => {
-              if (b.studentId === currentUser.studentId) {
-                batch.delete(doc(db, BOOKINGS_COLLECTION, b.slotId));
-              }
-            });
-            batch.delete(doc(db, STUDENT_LOCKS_COLLECTION, currentUser.studentId));
-            await batch.commit();
-
-            bookingsMap = await fetchLatestBookings();
             selectedSlotIds = [];
+            clearLiveSelection(currentUser.studentId);
             renderCurrentView();
-            showToast("기존 예약이 취소되었습니다. 2개 시간을 다시 선택해 주세요.", "info");
+            showToast("예약이 전체 취소되었습니다. 2개 시간을 다시 선택해 주세요.", "info");
           } catch (err) {
-            console.error("예약 취소 오류:", err);
+            console.error("전체 예약 취소 오류:", err);
             showToast("예약 취소 중 오류가 발생했습니다.", "error");
           }
         }
@@ -1178,7 +1718,7 @@
 
       let completedStudents = 0;
       ALLOWED_STUDENTS.forEach((st) => {
-        if (getStudentBookedSlots(st.studentId).length >= REQUIRED_SELECTION_COUNT) {
+        if (getStudentBookedSlots(st.studentId).length >= REQUIRED_TOTAL_SLOTS) {
           completedStudents += 1;
         }
       });
@@ -1188,31 +1728,50 @@
       statRemainingSlots.textContent = `${remainingCount}시간`;
       statCompletedStudents.textContent = `${completedStudents} / ${ALLOWED_STUDENTS.length}명`;
 
-      // 표 1: 학생별 신청 현황 및 연락처 테이블
+      // 표 1: 학생별 신청 현황 및 연락처 테이블 (총 5명, 각 슬롯별 개별 취소 + 전체 취소 지원)
       adminStudentsTableBody.innerHTML = ALLOWED_STUDENTS.map((st) => {
         const mySlots = getStudentBookedSlots(st.studentId);
-        const isCompleted = mySlots.length >= REQUIRED_SELECTION_COUNT;
-        const slot1Text = mySlots[0] ? mySlots[0].fullLabel : "-";
-        const slot2Text = mySlots[1] ? mySlots[1].fullLabel : "-";
+        const count = mySlots.length;
+
+        let statusBadgeHtml = "";
+        if (count >= REQUIRED_TOTAL_SLOTS) {
+          statusBadgeHtml = `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">완료 (2/2)</span>`;
+        } else if (count === 1) {
+          statusBadgeHtml = `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-sky-100 text-sky-800">일부 (1/2)</span>`;
+        } else {
+          statusBadgeHtml = `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800">미신청 (0/2)</span>`;
+        }
+
+        const slotsCellHtml =
+          count > 0
+            ? `<div class="flex flex-wrap items-center gap-1.5">
+                ${mySlots
+                  .map(
+                    (s) => `
+                      <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-50 border border-indigo-200 text-xs font-bold text-indigo-900">
+                        <span>${s.fullLabel}</span>
+                        <button type="button" data-cancel-slot="${s.slotId}"
+                          class="admin-cancel-slot-btn px-1.5 py-0.5 rounded bg-white hover:bg-rose-100 text-rose-600 border border-rose-200 text-[11px] font-bold transition-colors cursor-pointer">
+                          개별 취소
+                        </button>
+                      </span>
+                    `
+                  )
+                  .join("")}
+              </div>`
+            : `<span class="text-slate-400">-</span>`;
 
         return `
           <tr class="hover:bg-slate-50/80 transition-colors">
             <td class="py-3.5 px-4 font-bold text-slate-900">${st.studentId}</td>
             <td class="py-3.5 px-4 font-semibold text-slate-800">${st.name}</td>
             <td class="py-3.5 px-4">${renderPhoneWithActions(st.phone)}</td>
-            <td class="py-3.5 px-4">
-              ${
-                isCompleted
-                  ? `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">완료 (${mySlots.length}/2)</span>`
-                  : `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800">미신청 (${mySlots.length}/2)</span>`
-              }
-            </td>
-            <td class="py-3.5 px-4 font-medium text-slate-700">${slot1Text}</td>
-            <td class="py-3.5 px-4 font-medium text-slate-700">${slot2Text}</td>
+            <td class="py-3.5 px-4">${statusBadgeHtml}</td>
+            <td class="py-3.5 px-4">${slotsCellHtml}</td>
             <td class="py-3.5 px-4 text-right">
               ${
-                mySlots.length > 0
-                  ? `<button type="button" data-cancel-student="${st.studentId}" class="admin-cancel-student-btn px-3 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-semibold transition-colors cursor-pointer">개별 취소</button>`
+                count > 0
+                  ? `<button type="button" data-cancel-student="${st.studentId}" class="admin-cancel-student-btn px-3 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 text-xs font-semibold transition-colors cursor-pointer">전체 취소</button>`
                   : `<span class="text-xs text-slate-400">-</span>`
               }
             </td>
@@ -1228,22 +1787,29 @@
         return `
           <tr class="hover:bg-slate-50/80 transition-colors">
             <td class="py-3 px-4 font-semibold text-slate-800">${slot.dateLabel}</td>
-            <td class="py-3 px-4 font-bold text-slate-900">${slot.periodLabel}</td>
+            <td class="py-3 px-4">
+              <span class="font-bold text-slate-900">${slot.periodLabel}</span>
+              <span class="ml-1 px-1.5 py-0.5 rounded text-[11px] font-semibold ${
+                slot.timePartLabel === "오전"
+                  ? "bg-sky-50 text-sky-700"
+                  : "bg-indigo-50 text-indigo-700"
+              }">${slot.timePartLabel}</span>
+            </td>
             <td class="py-3 px-4">
               ${
                 isBooked
-                  ? `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-100 text-indigo-800">예약 완료</span>`
+                  ? `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-100 text-indigo-800">예약 확정</span>`
                   : `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-500">공석</span>`
               }
             </td>
             <td class="py-3 px-4 font-semibold text-slate-900">${isBooked ? booking.studentId : "-"}</td>
             <td class="py-3 px-4 font-semibold text-slate-800">${isBooked ? booking.studentName : "-"}</td>
             <td class="py-3 px-4">${isBooked ? renderPhoneWithActions(booking.phone) : "-"}</td>
-            <td class="py-3 px-4 text-xs text-slate-500">${isBooked ? formatDateTime(booking.bookedAt) : "-"}</td>
+            <td class="py-3 px-4 text-xs text-slate-500">${isBooked ? formatDateTime(booking.timestamp) : "-"}</td>
             <td class="py-3 px-4 text-right">
               ${
                 isBooked
-                  ? `<button type="button" data-cancel-slot="${slot.slotId}" class="admin-cancel-slot-btn px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-rose-100 text-slate-700 hover:text-rose-600 text-xs font-semibold transition-colors cursor-pointer">취소</button>`
+                  ? `<button type="button" data-cancel-slot="${slot.slotId}" class="admin-cancel-slot-btn px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-rose-100 text-slate-700 hover:text-rose-600 text-xs font-semibold transition-colors cursor-pointer">개별 취소</button>`
                   : `<span class="text-xs text-slate-400">-</span>`
               }
             </td>
@@ -1253,31 +1819,39 @@
 
       refreshIcons();
 
-      // 학생 단위 개별 취소 이벤트
+      // 관리자: 학생 단위 전체 취소 이벤트
       document.querySelectorAll(".admin-cancel-student-btn").forEach((btn) => {
         btn.addEventListener("click", () => {
           const sid = btn.getAttribute("data-cancel-student");
           const stObj = ALLOWED_STUDENTS.find((s) => s.studentId === sid);
           openConfirmModal(
-            "학생 예약 개별 취소",
+            "학생 예약 전체 취소",
             `${stObj ? `${stObj.studentId} ${stObj.name}` : sid} 학생의 예약된 모의면접 시간을 모두 취소하시겠습니까?`,
             async () => {
               try {
-                const latest = await fetchLatestBookings();
-                const batch = writeBatch(db);
-                Object.values(latest).forEach((b) => {
-                  if (b.studentId === sid) {
-                    batch.delete(doc(db, BOOKINGS_COLLECTION, b.slotId));
-                  }
-                });
-                batch.delete(doc(db, STUDENT_LOCKS_COLLECTION, sid));
-                await batch.commit();
+                if (isOfflineFallback) {
+                  const latest = readFallbackBookings();
+                  Object.keys(latest).forEach((k) => {
+                    if (latest[k]?.studentId === sid) delete latest[k];
+                  });
+                  writeFallbackBookings(latest);
+                  bookingsMap = latest;
+                } else {
+                  const latest = await fetchLatestBookings();
+                  const batch = writeBatch(db);
+                  Object.values(latest).forEach((b) => {
+                    if (b.studentId === sid) {
+                      batch.delete(doc(db, BOOKINGS_COLLECTION, b.slotId));
+                    }
+                  });
+                  await batch.commit();
+                  bookingsMap = await fetchLatestBookings();
+                }
 
-                bookingsMap = await fetchLatestBookings();
                 renderAdminView();
-                showToast("해당 학생의 예약이 취소되었습니다.", "info");
+                showToast("해당 학생의 예약이 전체 취소되었습니다.", "info");
               } catch (err) {
-                console.error("학생 예약 취소 오류:", err);
+                console.error("학생 예약 전체 취소 오류:", err);
                 showToast("취소 처리 중 오류가 발생했습니다.", "error");
               }
             }
@@ -1285,31 +1859,32 @@
         });
       });
 
-      // 슬롯 단위 개별 취소 이벤트
+      // 관리자: 개별 슬롯 취소 이벤트 (표 1 & 표 2 공통)
       document.querySelectorAll(".admin-cancel-slot-btn").forEach((btn) => {
         btn.addEventListener("click", () => {
           const slotId = btn.getAttribute("data-cancel-slot");
           const meta = SLOT_META_MAP[slotId];
+          const targetBooking = bookingsMap[slotId];
           openConfirmModal(
-            "시간대 예약 취소",
-            `[${meta ? meta.fullLabel : slotId}] 예약을 취소하시겠습니까?`,
+            "개별 시간 예약 취소",
+            `[${meta ? meta.fullLabel : slotId}] (${targetBooking ? `${targetBooking.studentId} ${targetBooking.studentName}` : ""}) 예약을 개별 취소하시겠습니까?`,
             async () => {
               try {
-                const latest = await fetchLatestBookings();
-                const target = latest[slotId];
-                const batch = writeBatch(db);
-                batch.delete(doc(db, BOOKINGS_COLLECTION, slotId));
-                if (target && target.studentId) {
-                  batch.delete(doc(db, STUDENT_LOCKS_COLLECTION, target.studentId));
+                if (isOfflineFallback) {
+                  const latest = readFallbackBookings();
+                  delete latest[slotId];
+                  writeFallbackBookings(latest);
+                  bookingsMap = latest;
+                } else {
+                  await deleteDoc(doc(db, BOOKINGS_COLLECTION, slotId));
+                  bookingsMap = await fetchLatestBookings();
                 }
-                await batch.commit();
 
-                bookingsMap = await fetchLatestBookings();
                 renderAdminView();
-                showToast("선택한 시간의 예약이 취소되었습니다.", "info");
+                showToast(`[${meta ? meta.fullLabel : slotId}] 예약이 개별 취소되었습니다.`, "info");
               } catch (err) {
-                console.error("슬롯 예약 취소 오류:", err);
-                showToast("취소 처리 중 오류가 발생했습니다.", "error");
+                console.error("슬롯 개별 취소 오류:", err);
+                showToast("개별 취소 처리 중 오류가 발생했습니다.", "error");
               }
             }
           );
@@ -1317,19 +1892,20 @@
       });
     }
 
-    // 엑셀(CSV) 다운로드 (UTF-8 BOM 적용)
+    // 엑셀(CSV) 다운로드 (UTF-8 BOM 적용, 파일명: 모의면접_예약현황_YYYY-MM-DD.csv)
     exportCsvBtn.addEventListener("click", () => {
-      const headers = ["날짜", "교시", "상태", "학번", "이름", "핸드폰 번호", "예약 시각"];
+      const headers = ["날짜", "교시", "구분", "상태", "학번", "이름", "핸드폰 번호", "예약 시각"];
       const rows = ALL_SLOTS.map((slot) => {
         const b = bookingsMap[slot.slotId];
         return [
           slot.dateLabel,
           slot.periodLabel,
-          b ? "예약 완료" : "공석",
+          slot.timePartLabel,
+          b ? "예약 확정" : "공석",
           b ? b.studentId : "",
           b ? b.studentName : "",
           b ? b.phone : "",
-          b ? formatDateTime(b.bookedAt) : ""
+          b ? formatDateTime(b.timestamp) : ""
         ];
       });
 
@@ -1349,24 +1925,41 @@
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
 
-      showToast("모의면접 예약 현황 엑셀(CSV) 파일이 다운로드되었습니다.", "success");
+      showToast("모의면접 예약 현황 CSV 파일이 다운로드되었습니다.", "success");
     });
 
-    // 전체 데이터 초기화
+    // 전체 예약 초기화
     resetAllBtn.addEventListener("click", () => {
       openConfirmModal(
-        "전체 데이터 초기화",
+        "전체 예약 초기화",
         "모든 학생의 모의면접 예약 데이터를 전부 삭제하고 초기화하시겠습니까?\n이 작업은 되돌릴 수 없습니다.",
         async () => {
           try {
-            const batch = writeBatch(db);
-            const bookingSnap = await getDocs(collection(db, BOOKINGS_COLLECTION));
-            bookingSnap.forEach((docSnap) => batch.delete(docSnap.ref));
-            const lockSnap = await getDocs(collection(db, STUDENT_LOCKS_COLLECTION));
-            lockSnap.forEach((docSnap) => batch.delete(docSnap.ref));
-            await batch.commit();
+            if (isOfflineFallback) {
+              writeFallbackBookings({});
+              bookingsMap = {};
+            } else {
+              const batch = writeBatch(db);
+              const bookingSnap = await getDocs(collection(db, BOOKINGS_COLLECTION));
+              bookingSnap.forEach((docSnap) => batch.delete(docSnap.ref));
+              await batch.commit();
 
-            bookingsMap = {};
+              // 임시 선택 상태 컬렉션도 비동기 정리 (권한 제한 시 무시)
+              getDocs(collection(db, SELECTIONS_COLLECTION))
+                .then((selectionSnap) => {
+                  if (selectionSnap.empty) return;
+                  const selBatch = writeBatch(db);
+                  selectionSnap.forEach((docSnap) => selBatch.delete(docSnap.ref));
+                  return selBatch.commit();
+                })
+                .catch(() => {});
+
+              bookingsMap = {};
+              writeFallbackBookings({});
+            }
+
+            liveSelectionsMap = {};
+            localStorage.removeItem(LIVE_SELECTIONS_STORAGE_KEY);
             renderAdminView();
             showToast("전체 예약 데이터가 초기화되었습니다.", "info");
           } catch (err) {
@@ -1403,11 +1996,7 @@
       selectedSlotIds = [];
       persistUser(matchedAccount);
 
-      try {
-        bookingsMap = await fetchLatestBookings();
-      } catch (err) {
-        console.error("로그인 직후 데이터 조회 오류:", err);
-      }
+      bookingsMap = await fetchLatestBookings();
 
       renderCurrentView();
       showToast(
@@ -1418,7 +2007,10 @@
       );
     });
 
-    logoutBtn.addEventListener("click", () => {
+    logoutBtn.addEventListener("click", async () => {
+      if (currentUser && currentUser.role === "student") {
+        await clearLiveSelection(currentUser.studentId);
+      }
       currentUser = null;
       selectedSlotIds = [];
       persistUser(null);
@@ -1429,10 +2021,12 @@
       showToast("로그아웃되었습니다.", "info");
     });
 
+    // 경고 모달 닫기
     alertModalOkBtn.addEventListener("click", () => {
       alertModal.classList.add("hidden");
     });
 
+    // 확인 모달 닫기 및 실행
     confirmModalCancelBtn.addEventListener("click", () => {
       pendingConfirmAction = null;
       confirmModal.classList.add("hidden");
@@ -1444,6 +2038,13 @@
         const fn = pendingConfirmAction;
         pendingConfirmAction = null;
         await fn();
+      }
+    });
+
+    // 브라우저 창을 닫거나 새로고침할 때 미확정 임시 선택 정리
+    window.addEventListener("beforeunload", () => {
+      if (currentUser && currentUser.role === "student" && selectedSlotIds.length > 0) {
+        clearLiveSelection(currentUser.studentId);
       }
     });
 
